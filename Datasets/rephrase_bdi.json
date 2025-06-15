@@ -1,0 +1,88 @@
+{
+  "symptoms": [
+    {
+      "id": "Q1",
+      "question": "how sad the user feels"
+    },
+    {
+      "id": "Q2",
+      "question": "how discouraged the user is about future"
+    },
+    {
+      "id": "Q3",
+      "question": "how much the user feels like a failure"
+    },
+    {
+      "id": "Q4",
+      "question": "how much the user loses pleasure from things"
+    },
+    {
+      "id": "Q5",
+      "question": "how often the user feels guilty"
+    },
+    {
+      "id": "Q6",
+      "question": "how much the user feels punished"
+    },
+    {
+      "id": "Q7",
+      "question": "how much the user feels disappointed about him/herself"
+    },
+    {
+      "id": "Q8",
+      "question": "how often the user criticizes or blames him/herself"
+    },
+    {
+      "id": "Q9",
+      "question": "how much the user thinks about killing him/herself"
+    },
+    {
+      "id": "Q10",
+      "question": "how often the user cries"
+    },
+    {
+      "id": "Q11",
+      "question": "how much the user feels restless or agitated"
+    },
+    {
+      "id": "Q12",
+      "question": "how much the user loses interest in things"
+    },
+    {
+      "id": "Q13",
+      "question": "how difficult the user to make decisions"
+    },
+    {
+      "id": "Q14",
+      "question": "how much the user feels worthless"
+    },
+    {
+      "id": "Q15",
+      "question": "how much the user loses energy"
+    },
+    {
+      "id": "Q16",
+      "question": "how much the user experienced changes in sleeping"
+    },
+    {
+      "id": "Q17",
+      "question": "how much the user feels irritable"
+    },
+    {
+      "id": "Q18",
+      "question": "how much the user experienced changes in appetite"
+    },
+    {
+      "id": "Q19",
+      "question": "how difficult the user to concentrate"
+    },
+    {
+      "id": "Q20",
+      "question": "how much the user feels tired or fatigued"
+    },
+    {
+      "id": "Q21",
+      "question": "how much the user loses interest in sex"
+    }
+  ]
+}
