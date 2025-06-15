@@ -119,33 +119,37 @@ def ollama_generate(prompt, model=OLLAMA_MODEL):
             "prompt": prompt,
             "stream": False
         },
-        timeout=120
     )
     response.raise_for_status()
     data = response.json()
     return data["response"]
 
 def build_prompt(symptom_question, user_text):
+    max_chars = 4096 * 4
+    truncated_text = user_text[:max_chars] + ("..." if len(user_text) > max_chars else "")
     return (
-        "### Instruction: The following paragraph was concatenated from a user’s posts on social media. "
         "Suppose you are a psychiatrist who prefer to give minor diagnoses rather than serious ones, "
         f"read the posts as a whole, determine the level of \"{symptom_question}\" and give a number in 0, 1, 2 or 3, then explain why.\n"
-        f"### User’s posts: {user_text}\n"
-        "### Level (0, 1, 2 or 3):"
+        f"User’s posts: {user_text}\n"
+        "Level (0, 1, 2 or 3):"
     )
 
 def extract_level_and_explanation(response_text, prompt):
-    """Extract the predicted level and explanation from LLM response"""
+    """Extract the predicted level (0-3) from LLM response and return the whole response as explanation."""
     try:
         # Remove the original prompt from response
         response_only = response_text.replace(prompt, "").strip()
         
         # Try to find level using regex patterns
         level_patterns = [
-            r'Level\s*\(0,\s*1,\s*2\s*or\s*3\):\s*([0-3])',
-            r'Level:\s*([0-3])',
-            r'^([0-3])',  # Level at start
-            r'([0-3])\s*[-\.]',  # Level followed by dash or dot
+            r'Level\s*\(0,\s*1,\s*2\s*or\s*3\):\s*([0-3])',   # Strict BDI format
+            r'Level:\s*([0-3])',                              # "Level: 2"
+            r'^([0-3])',                                      # Level at start
+            r'([0-3])\s*[-\.]',                               # Level followed by dash or dot
+            r'Level.*?([0-3])',                               # Any "Level..." with a digit
+            r'([0-3])\s*(?:out of|/)\s*3',                    # "2 out of 3" or "1/3"
+            r'(?:answer|score|level|rating).*?([0-3])',       # "score is 2", etc.
+            r'([0-3])(?=\s|$|\.)',   
         ]
         
         level = None
@@ -160,29 +164,10 @@ def extract_level_and_explanation(response_text, prompt):
             digit_match = re.search(r'[0-3]', response_only)
             level = int(digit_match.group()) if digit_match else 0
         
-        # Extract explanation - everything after the level
-        explanation_patterns = [
-            r'Level\s*\(0,\s*1,\s*2\s*or\s*3\):\s*[0-3]\s*(.*)',
-            r'[0-3]\s*[-\.]\s*(.*)',
-            r'[0-3]\s+(.*)'
-        ]
+        # For explanation, just return the whole response (truncated)
+        explanation = response_only if response_only else "Analysis completed."
         
-        explanation = ""
-        for pattern in explanation_patterns:
-            match = re.search(pattern, response_only, re.DOTALL | re.IGNORECASE)
-            if match:
-                explanation = match.group(1).strip()
-                break
-        
-        if not explanation:
-            # Fallback: use everything after first line
-            lines = response_only.split('\n')
-            if len(lines) > 1:
-                explanation = ' '.join(lines[1:]).strip()
-            else:
-                explanation = "Analysis completed."
-        
-        return level, explanation[:1000]  # Truncate long explanations
+        return level, explanation
         
     except Exception as e:
         return 0, f"Error parsing response: {str(e)}"
@@ -213,7 +198,7 @@ def interpret_total_score(total_score):
     """Interpret total BDI score"""
     if total_score <= 9:
         return "Minimal", "result-box-low"
-    elif total_score <= 18:
+    elif total_score <= 19:
         return "Mild", "result-box-moderate"
     elif total_score <= 29:
         return "Moderate", "result-box-moderate"
@@ -260,7 +245,23 @@ elif st.session_state.current_page == "🕵️ Depression Detection":
     """)
     consent = st.checkbox("I consent to the analysis of my text for mental health assessment. I understand that my data will not be stored or shared.")
     
-    st.markdown('<div class="info-box">💡 Simply type or paste text into the box below and click "Analyze".</div>', unsafe_allow_html=True)
+    # Add this above your text input in the Streamlit app
+
+    with st.expander("💡 Tips for writing your text (click to expand)"):
+        st.markdown("""
+        To get more accurate analysis, try to mention how you have been feeling and any changes you’ve noticed.
+        Examples of areas to include:
+        - **Feelings:** Describe your emotional state, such as feeling sad, discouraged about the future, or like a failure.
+        - **Enjoyment:** Talk about whether you still find pleasure in things you used to enjoy, or if you’ve lost interest in activities.
+        - **Self-perception:** Share if you’ve been feeling guilty, worthless, disappointed in yourself, or overly self-critical.
+        - **Thoughts:** Mention any hopeless or negative thoughts about the future, or if you’ve had thoughts of self-harm.
+        - **Emotional reactions:** Note if you’ve been crying more often, feeling restless, agitated, or irritable.
+        - **Daily life:** Describe any changes in your sleep patterns, appetite, energy levels, or if you often feel tired or fatigued.
+        - **Cognition:** Include if you’ve had trouble concentrating, making decisions, or if you feel mentally slowed down.
+        - **Relationships and interest:** Mention if you’ve lost interest in sex or social activities, or if you feel disconnected from others.
+
+        Just share what feels most relevant to you.
+        """)
     
   
     user_text = st.text_area("Enter text to analyze", height=200, placeholder="Type or paste your text here...")
